@@ -1,8 +1,8 @@
 services:
-  - type: worker
+  - type: web
     name: agreement-change-bot
     env: docker
-    plan: starter
+    plan: free
     envVars:
       - key: BOT_TOKEN
         sync: false
