@@ -3,18 +3,30 @@ Agreement Change Request Bot
 -----------------------------
 Sales team DMs the bot /request, answers 3 questions one at a time,
 the bot logs the submission to a Google Sheet (via an Apps Script
-webhook — no service account needed) and posts a clean summary into
-the Agreement Change Requests Telegram group.
+webhook) and posts a clean summary into the Agreement Change
+Requests Telegram group.
+
+Runs a tiny background HTTP server alongside the Telegram polling
+loop, purely so Render's free Web Service tier has a port to detect
+as "alive." The bot itself still works entirely through Telegram
+polling, not HTTP.
+
+NOTE: Render's free tier spins the service down after ~15 min of
+inactivity. The first /request after it's been idle may take
+30-60 seconds to respond while it wakes back up.
 
 Env vars required (see .env.example):
   BOT_TOKEN          - Telegram bot token from @BotFather
   GROUP_CHAT_ID       - chat_id of the "Agreement Change Requests" group
   APPS_SCRIPT_URL     - Web App URL of the deployed Apps Script (AppsScript.gs)
+  PORT                - provided automatically by Render, defaults to 10000 locally
 """
 
 import os
 import logging
+import threading
 from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import requests
 from telegram import Update, ReplyKeyboardRemove
@@ -36,9 +48,28 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 GROUP_CHAT_ID = os.environ["GROUP_CHAT_ID"]
 APPS_SCRIPT_URL = os.environ["APPS_SCRIPT_URL"]
+PORT = int(os.environ.get("PORT", 10000))
 
 # Conversation states
 CLIENT_NAME, AGREEMENT_SENT, CHANGES_REQUESTED = range(3)
+
+
+# ---- tiny health-check HTTP server (for Render's free tier) ----
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"Agreement Change Request bot is running.")
+
+    def log_message(self, format, *args):
+        pass  # silence default request logging, keep logs clean
+
+
+def run_health_server():
+    server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
+    logger.info(f"Health check server listening on port {PORT}")
+    server.serve_forever()
 
 
 def log_to_sheet(payload: dict) -> bool:
@@ -91,7 +122,6 @@ async def changes_requested(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     data = context.user_data
 
-    # Log to Google Sheet via Apps Script webhook
     sheet_ok = log_to_sheet(
         {
             "timestamp": timestamp,
@@ -103,7 +133,6 @@ async def changes_requested(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         }
     )
 
-    # Post summary to the group
     summary = (
         "📋 *New Agreement Change Request*\n\n"
         f"*Client Name:* {data['client_name']}\n"
@@ -142,6 +171,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 def main() -> None:
+    # Start the tiny health-check server in the background so Render's
+    # free web service tier sees an open port and considers it "live."
+    threading.Thread(target=run_health_server, daemon=True).start()
+
     application = Application.builder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
