@@ -102,6 +102,9 @@
       <label for="submittedBy">Your Name</label>
       <input type="text" id="submittedBy" required placeholder="e.g. Juan Dela Cruz" />
 
+      <label for="submittedByEmail">Your Email</label>
+      <input type="email" id="submittedByEmail" required placeholder="e.g. juan@arbitrageempire.com" />
+
       <label for="clientName">Client Name</label>
       <input type="text" id="clientName" required placeholder="e.g. John Doe" />
 
@@ -134,6 +137,7 @@
       const payload = {
         timestamp: new Date().toLocaleString(),
         submitted_by: document.getElementById("submittedBy").value.trim(),
+        submitted_by_email: document.getElementById("submittedByEmail").value.trim(),
         username: "", // not applicable from a web form
         client_name: document.getElementById("clientName").value.trim(),
         agreement_sent: document.getElementById("agreementSent").value.trim(),
