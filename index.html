@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agreement Change Request</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --border: #2a2e38;
+    --text: #e8eaed;
+    --muted: #9aa0ab;
+    --accent: #4f8cff;
+    --accent-hover: #3d78e8;
+    --success: #2fbf71;
+    --error: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+    min-height: 100vh;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  p.subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    margin-top: 18px;
+  }
+  label:first-of-type { margin-top: 0; }
+  input, textarea {
+    width: 100%;
+    background: #0f1115;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { min-height: 90px; }
+  button {
+    width: 100%;
+    margin-top: 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button:hover { background: var(--accent-hover); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .status {
+    margin-top: 16px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+  }
+  .status.success { color: var(--success); display: block; }
+  .status.error { color: var(--error); display: block; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>📋 Agreement Change Request</h1>
+    <p class="subtitle">Fill this out whenever a client asks for changes to their agreement.</p>
+
+    <form id="requestForm">
+      <label for="submittedBy">Your Name</label>
+      <input type="text" id="submittedBy" required placeholder="e.g. Juan Dela Cruz" />
+
+      <label for="clientName">Client Name</label>
+      <input type="text" id="clientName" required placeholder="e.g. John Doe" />
+
+      <label for="agreementSent">Exact Agreement Sent</label>
+      <input type="text" id="agreementSent" required placeholder="e.g. Agreement v2 — sent 8/29" />
+
+      <label for="changesRequested">Explain the Exact Changes Requested</label>
+      <textarea id="changesRequested" required placeholder="Be specific — what's changing, from what to what"></textarea>
+
+      <button type="submit" id="submitBtn">Submit Request</button>
+      <div class="status" id="status"></div>
+    </form>
+  </div>
+
+  <script>
+    // Set this to your deployed Apps Script Web App URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxV1yDljPw4rYaFLnhIXJDKF_-FddimBLLD81xKwXs82Kvhg-9HbKFc_qayEMPuuRJ9Jw/exec";
+
+    const form = document.getElementById("requestForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      status.className = "status";
+      status.textContent = "";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting...";
+
+      const payload = {
+        timestamp: new Date().toLocaleString(),
+        submitted_by: document.getElementById("submittedBy").value.trim(),
+        username: "", // not applicable from a web form
+        client_name: document.getElementById("clientName").value.trim(),
+        agreement_sent: document.getElementById("agreementSent").value.trim(),
+        changes_requested: document.getElementById("changesRequested").value.trim(),
+      };
+
+      try {
+        const resp = await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" }, // avoids CORS preflight on Apps Script
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+
+        if (data.status === "ok") {
+          status.className = "status success";
+          status.textContent = "✅ Submitted! Posted to the group and logged.";
+          form.reset();
+        } else {
+          throw new Error(data.message || "Unknown error");
+        }
+      } catch (err) {
+        status.className = "status error";
+        status.textContent = "⚠️ Something went wrong. Please try again or ping an admin.";
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Request";
+      }
+    });
+  </script>
+</body>
+</html>
