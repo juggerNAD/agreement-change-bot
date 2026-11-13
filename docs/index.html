@@ -52,7 +52,7 @@
     margin-top: 18px;
   }
   label:first-of-type { margin-top: 0; }
-  input, textarea {
+  input, textarea, select {
     width: 100%;
     background: #0f1115;
     border: 1px solid var(--border);
@@ -63,7 +63,7 @@
     font-family: inherit;
     resize: vertical;
   }
-  input:focus, textarea:focus {
+  input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: var(--accent);
   }
@@ -105,6 +105,14 @@
       <label for="submittedByEmail">Your Email</label>
       <input type="email" id="submittedByEmail" required placeholder="e.g. juan@arbitrageempire.com" />
 
+      <label for="agreementType">Agreement Type</label>
+      
+      <select id="agreementType" required>
+        <option value="" disabled selected>Select Front End or Back End</option>
+        <option value="FE">Front End (FE)</option>
+        <option value="BE">Back End (BE)</option>
+      </select>
+
       <label for="clientName">Client Name</label>
       <input type="text" id="clientName" required placeholder="e.g. John Doe" />
 
@@ -138,6 +146,7 @@
         timestamp: new Date().toLocaleString(),
         submitted_by: document.getElementById("submittedBy").value.trim(),
         submitted_by_email: document.getElementById("submittedByEmail").value.trim(),
+        agreement_type: document.getElementById("agreementType").value,
         username: "", // not applicable from a web form
         client_name: document.getElementById("clientName").value.trim(),
         agreement_sent: document.getElementById("agreementSent").value.trim(),
