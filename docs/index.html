@@ -106,7 +106,6 @@
       <input type="email" id="submittedByEmail" required placeholder="e.g. juan@arbitrageempire.com" />
 
       <label for="agreementType">Agreement Type</label>
-      
       <select id="agreementType" required>
         <option value="" disabled selected>Select Front End or Back End</option>
         <option value="FE">Front End (FE)</option>
@@ -130,6 +129,17 @@
   <script>
     // Set this to your deployed Apps Script Web App URL
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyu7LPs1IN7-hy2Oxr8Rsr-4tgvkkZCKfmQgu-GT4znZpQSwDo42O_oywe9mjaXiORS/exec";
+
+    // Two links, one form: ...?type=FE or ...?type=BE hides the dropdown
+    const typeParam = (new URLSearchParams(window.location.search).get("type") || "").toUpperCase();
+    if (typeParam === "FE" || typeParam === "BE") {
+      document.getElementById("agreementType").value = typeParam;
+      document.getElementById("agreementType").style.display = "none";
+      document.querySelector('label[for="agreementType"]').style.display = "none";
+      document.querySelector("p.subtitle").textContent =
+        (typeParam === "FE" ? "Front End" : "Back End") +
+        " agreement change request. Fill this out whenever a client asks for changes to their agreement.";
+    }
 
     const form = document.getElementById("requestForm");
     const submitBtn = document.getElementById("submitBtn");
